@@ -1564,7 +1564,10 @@ PARAM_STRING(
 	"dlopen(3) loadable object.  Any occurrence of %s in "
 	"the string will be replaced with the source file name, "
 	"and %o will be replaced with the output file name.",
-	/* flags */	MUST_RELOAD
+	/* flags */	MUST_RELOAD | BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"exec c99 -lpthread -shared -fPIC -o %o %s"
 )
 
 PARAM_STRING(
@@ -1590,7 +1593,11 @@ PARAM_STRING(
 	"VCL files in both the system configuration and shared "
 	"data directories to allow packages to drop their VCL "
 	"files in a standard location where relative includes "
-	"would work."
+	"would work.",
+	/* flags */	BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"/usr/share/varnish/vcl:/etc/varnish"
 )
 
 PARAM_STRING(
@@ -1600,7 +1607,11 @@ PARAM_STRING(
 	/* def */	VARNISH_VMOD_DIR,
 	/* descr */
 	"Directory (or colon separated list of directories) "
-	"where VMODs are to be found."
+	"where VMODs are to be found.",
+	/* flags */	BUILD_OPTIONS,
+	/* dyn_min_reason */	NULL,
+	/* dyn_max_reason */	NULL,
+	/* dyn_def_reason */	"/usr/lib/varnish/vmods"
 )
 
 /*--------------------------------------------------------------------
