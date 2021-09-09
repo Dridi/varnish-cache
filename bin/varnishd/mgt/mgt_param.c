@@ -108,6 +108,10 @@ static const char PLATFORM_DEPENDENT_TEXT[] =
 	"NB: This parameter depends on a feature which is not available"
 	" on all platforms.";
 
+static const char BUILD_OPTIONS_TEXT[] =
+	"NB: The actual default value for this parameter depends on the"
+	" Varnish build environment and options.";
+
 /*--------------------------------------------------------------------*/
 
 static struct parspec *
@@ -324,6 +328,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, PROTECTED_TEXT);
 			if (pp->flags & ONLY_ROOT)
 				mcf_wrap(cli, ONLY_ROOT_TEXT);
+			if (pp->flags & BUILD_OPTIONS)
+				mcf_wrap(cli, BUILD_OPTIONS_TEXT);
 			VCLI_Out(cli, "\n\n");
 		}
 	}
@@ -439,6 +445,7 @@ mcf_param_show_json(struct cli *cli, const char * const *av, void *priv)
 		flag_out(WIZARD, wizard);
 		flag_out(PROTECTED, protected);
 		flag_out(ONLY_ROOT, only_root);
+		flag_out(BUILD_OPTIONS, BUILD_OPTIONS_TEXT);
 
 #undef flag_out
 
@@ -771,6 +778,9 @@ MCF_DumpRstParam(void)
 		if (pp->flags && pp->flags & PLATFORM_DEPENDENT)
 			printf("\n%s\n\n", PLATFORM_DEPENDENT_TEXT);
 
+		if (pp->flags && pp->flags & BUILD_OPTIONS)
+			printf("\n%s\n\n", BUILD_OPTIONS_TEXT);
+
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
 #define MCF_DYN_REASON(lbl, nm)					\
@@ -788,7 +798,7 @@ MCF_DumpRstParam(void)
 		 * XXX: that say if ->min/->max are valid, so we
 		 * XXX: can emit those also in help texts.
 		 */
-		if (pp->flags & ~(NOT_IMPLEMENTED|PLATFORM_DEPENDENT)) {
+		if (pp->flags & ~DOCS_FLAGS) {
 			printf("\t* Flags: ");
 			q = "";
 
