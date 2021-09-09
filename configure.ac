@@ -707,15 +707,24 @@ gl_LD_VERSION_SCRIPT
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
+# --enable-developer-warnings
+AC_ARG_ENABLE(developer-warnings,
+	AS_HELP_STRING([--enable-developer-warnings],
+		[enable strict warnings (default is NO)]),
+	[],
+	[enable_developer_warnings=no])
+
+# This corresponds to FreeBSD's WARNS level 6
+DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
+if test $? -ne 0 ; then
+  AC_MSG_ERROR([wflags.py failure])
+fi
+
 # This is a test to see how much havoc Jenkins exposes.
 #
 # The reason for -Wno-error=unused-result is a glibc/gcc interaction
 # idiocy where write is marked as warn_unused_result, causing build
 # failures.
-
-AX_CHECK_COMPILE_FLAG([-Wall],
-     [CFLAGS="${CFLAGS} -Wall"
-      OCFLAGS="${OCFLAGS} -Wall"])
 
 if test "$SUNCC" = "yes" ; then
     SUNCC_CFLAGS=" \
@@ -723,34 +732,20 @@ if test "$SUNCC" = "yes" ; then
 	-errtags=yes \
 	"
     AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
-	[CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
-	 OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])
-else
-    AX_CHECK_COMPILE_FLAG([-Werror],
-	[CFLAGS="${CFLAGS} -Werror"
-	 OCFLAGS="${OCFLAGS} -Werror"])
+	[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${SUNCC_CFLAGS}"])
 fi
 
 case $target in
     *-*-darwin*)
 	AX_CHECK_COMPILE_FLAG([-Wno-expansion-to-defined],
-	[CFLAGS="${CFLAGS} -Wno-expansion-to-defined"
-	 OCFLAGS="${OCFLAGS} -Wno-expansion-to-defined"])
+	[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-expansion-to-defined"])
 	;;
 esac
 
 AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
-    [CFLAGS="${CFLAGS} -Wno-error=unused-result"
-     OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
-    [AX_CHECK_COMPILE_FLAG([-Wunused-result],
-     [CFLAGS="${CFLAGS} -Wno-unused-result"
-      OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
-
-# This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS=`$PYTHON $srcdir/wflags.py`
-if test $? -ne 0 ; then
-  AC_MSG_ERROR([wflags.py failure])
-fi
+	[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-error=unused-result"],
+	[AX_CHECK_COMPILE_FLAG([-Wunused-result],
+		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-unused-result"])])
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
@@ -765,20 +760,16 @@ if test "x$enable_stack_protector" != "xno"; then
 		[], [])
 fi
 
-# --enable-developer-warnings
-AC_ARG_ENABLE(developer-warnings,
-	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
-	[],
-	[enable_developer_warnings=no])
-
-if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
+if test "$SUNCC" != "yes"; then
 	# no known way to specifically disabling missing-field-initializers
 	# warnings keeping the rest of Wextra
 	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-missing-field-initializers"],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-extra"],
 		[])
+fi
 
+if test "$enable_developer_warnings" != "no"; then
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}"
 	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS}"
 fi
