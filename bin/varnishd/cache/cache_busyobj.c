@@ -194,3 +194,34 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	vbo_Free(&bo);
 }
+
+void
+VBO_SetState(struct worker *wrk, struct busyobj *bo, enum boc_state_e next)
+{
+	unsigned broadcast;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	switch (next) {
+	case BOS_REQ_DONE:
+		AN(bo->req);
+		broadcast = bo->is_bgfetch;
+		break;
+	case BOS_STREAM:
+		if (!bo->do_stream) {
+			bo->req = NULL;
+			return;		/* keep objcore busy */
+		}
+		/* fall through */
+	case BOS_FINISHED:
+	case BOS_FAILED:
+		broadcast = 1;
+		break;
+	default:
+		WRONG("unexpected BOC state");
+	}
+
+	bo->req = NULL;
+	ObjSetState(wrk, bo->fetch_objcore, next, broadcast);
+}
